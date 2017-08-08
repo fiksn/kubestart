@@ -18,9 +18,7 @@ command_exists "You do not seem to have curl installed" $CURL
 command_exists "You do not seem to have cfssl installed - try 'brew install cfssl' or check https://pkg.cfssl.org" cfssl
 command_exists "You do not seem to have jq installed - try 'brew install jq'" jq
 
-echo "Your home dir seems to be $HOME"
-
-KUBE_USER="$1"
+KUBE_USER=${KUBE_USER:-"$1"}
 if [ -z "$KUBE_USER" ]; then
   read -r -p "What is your username? (example: a.user)> " KUBE_USER
 fi

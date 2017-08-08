@@ -25,7 +25,7 @@ trap finish EXIT
 
 ESCAPED_USER=${ESCAPED_USER:-$(cat $DIR/config | grep client-certificate | cut -d":" -f 2 | sed 's/.crt//g' | tr -d "/. ")}
 if [ -z "$ESCAPED_USER" ]; then
-  echo "Is $DIR/config correct? You might also want to set ESCAPED_USER=gpogacnik" 
+  echo "Is $DIR/config correct? You might also want to set ESCAPED_USER=auser" 
   exit 1
 fi
 
