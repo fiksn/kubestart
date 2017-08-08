@@ -7,18 +7,20 @@ where *a.user* is your username.
 
 ## What does this thing do?
 
-This a quite lame (but quick) way to initialize your work environment to use our internal Kubernetes cluster (like request a certificate and download latest kubectl). Until we hook up authentication to AD we need this. For external users there is probably no real need to read this except curiosity.
+This a quite lame (but quick) way to initialize your work environment to use our internal Kubernetes cluster (like request a certificate and download latest kubectl). Until we hook up authentication to AD we need this. 
 
-**This is not a tutorial to bootstrap a Kubernetes cluster - use the great [kubeadm](https://kubernetes.io/docs/setup/independent/create-cluster-kubeadm/) tool for that purpose**
+For external users there is probably no real need to read this except curiosity. (Hope you learned something new though.)
+
+**This is not a tutorial for bootstrapping a Kubernetes cluster - use the great [kubeadm](https://kubernetes.io/docs/setup/independent/create-cluster-kubeadm/) tool for that purpose**
 
 ## Compatibility
 
-I am testing this with MacOS (Sierra currently) but it should work also on GNU/Linux.
-There is a bunch of external utilites required: 
-* jq 
-* cfssl
-* curl (present by default on MacOS)
-* base64 (probably already present by default)
+I am testing this with MacOS (Sierra) but it should work also on GNU/Linux.
+There is a bunch of external utilities required: 
+* [jq](https://stedolan.github.io/jq/)
+* [cfssl](https://www.cfssl.org/)
+* [curl](https://curl.haxx.se/) (present by default on MacOS)
+* [base64](https://linux.die.net/man/1/base64) (probably already present in whatever distro you use through coreutils)
 
 ## Motivation
 
