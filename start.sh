@@ -18,9 +18,16 @@ command_exists "You do not seem to have curl installed" $CURL
 command_exists "You do not seem to have cfssl installed - try 'brew install cfssl' or check https://pkg.cfssl.org" cfssl
 command_exists "You do not seem to have jq installed - try 'brew install jq'" jq
 
+echo "Your home dir seems to be $HOME"
+
 KUBE_USER="$1"
 if [ -z "$KUBE_USER" ]; then
   read -r -p "What is your username? (example: a.user)> " KUBE_USER
+fi
+
+if [ -z "$KUBE_USER" ]; then
+  echo "Invalid user"
+  exit 1
 fi
 
 ESCAPED_USER=$(echo $KUBE_USER | tr -cd "[a-z]")
@@ -155,5 +162,5 @@ mv -f ${ESCAPED_USER}-key.pem "$DIR/${ESCAPED_USER}.key"
 curl -o "$DIR/cert.sh" https://raw.githubusercontent.com/fiksn/kubestart/master/cert.sh 2>/dev/null
 chmod a+x "$DIR/cert.sh"
 
-echo "Somebody with the privilege now needs to do \"kubectl certificate approve ${ESCAPED_USER}\""
+echo "Somebody with the privilege now needs to do \"kubectl certificate approve ${ESCAPED_USER}\" and give you the correct role through RBAC"
 echo "Then you need to run $DIR/cert.sh to obtain the signed certificate"

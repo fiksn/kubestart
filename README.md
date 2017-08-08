@@ -43,4 +43,4 @@ Note that for each CSR an admin still has to manually approve it like:
 kubectl certificate approve name
 ```
 
-only afterwards the controller will sign.
+only afterwards the controller will sign. Besides the admin should of course also give proper permissions / create role bindings ([example](./binding.yaml)).
