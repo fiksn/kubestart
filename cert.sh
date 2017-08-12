@@ -19,7 +19,7 @@ command_exists "You do not seem to have cfssl installed - try 'brew install cfss
 command_exists "You do not seem to have jq installed - try 'brew install jq'" jq
 
 function finish {
-  rm -f cert*.temp
+  rm -f tempcert*
 }
 trap finish EXIT
 
@@ -41,7 +41,7 @@ fi
 while true; do
   echo "$ESCAPED_USER trying to fetch certificate"
 
-  OUT="$(mktemp certXXXXXXX.temp)"
+  OUT="$(mktemp tempcertXXXXXXX)"
   $CURL -k -H "Accept: application/json" ${KUBE_MASTER}/apis/certificates.k8s.io/v1beta1/certificatesigningrequests/${ESCAPED_USER} 2>/dev/null | jq .status.certificate | tr -d '"' | base64 --decode > $OUT
 
   if [ -s "$OUT" ]; then
