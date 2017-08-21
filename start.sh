@@ -34,7 +34,8 @@ command_exists () {
 install_cfssl () {
   $SUDO $CURL https://pkg.cfssl.org/${CFSSL_VER}/cfssl_${DISTRO}-${ARCH} -o ${BIN_DIR}/cfssl
   $SUDO $CURL https://pkg.cfssl.org/${CFSSL_VER}/cfssljson_${DISTRO}-${ARCH} -o ${BIN_DIR}/cfssljson
-  $SUDO chmod a+x ${BIN_DIR}/{cfssl,cfssljson}
+  $SUDO chmod a+x ${BIN_DIR}/cfssl
+  $SUDO chmod a+x ${BIN_DIR}/cfssljson
 }
 
 command_exists "You do not seem to have curl installed - try 'apt-get install curl'" $CURL
