@@ -4,7 +4,7 @@ export CURL=${CURL:-"curl --connect-timeout 5 --max-time 10"}
 export KUBE_MASTER=${KUBE_MASTER:-"https://10.27.26.98:443"}
 export DIR=${DIR:-"$HOME/.kube"}
 
-function command_exists {
+command_exists () {
   MSG=$1
   shift 1
   "$@" > /dev/null 2>/dev/null
@@ -15,21 +15,20 @@ function command_exists {
 }
 
 command_exists "You do not seem to have curl installed" $CURL
-command_exists "You do not seem to have cfssl installed - try 'brew install cfssl' or check https://pkg.cfssl.org" cfssl
-command_exists "You do not seem to have jq installed - try 'brew install jq'" jq
+command_exists "You do not seem to have jq installed - try 'brew install jq' or 'apt-get install jq'" jq
 
-function finish {
+finish () {
   rm -f tempcert*
 }
 trap finish EXIT
 
-ESCAPED_USER=${ESCAPED_USER:-$(cat $DIR/config | grep client-certificate | cut -d":" -f 2 | sed 's/.crt//g' | tr -d "/. ")}
+ESCAPED_USER=${ESCAPED_USER:-$(cat ${DIR}/config | grep client-certificate | cut -d":" -f 2 | sed 's/.crt//g' | tr -d "/. ")}
 if [ -z "$ESCAPED_USER" ]; then
   echo "Is $DIR/config correct? You might also want to set ESCAPED_USER=auser" 
   exit 1
 fi
 
-DEST="$DIR/${ESCAPED_USER}.crt"
+DEST="${DIR}/${ESCAPED_USER}.crt"
 
 if [ -s "$DEST" ]; then
   if [ -z "$FORCE" ]; then
@@ -42,7 +41,7 @@ while true; do
   echo "$ESCAPED_USER trying to fetch certificate"
 
   OUT="$(mktemp tempcertXXXXXXX)"
-  $CURL -k -H "Accept: application/json" ${KUBE_MASTER}/apis/certificates.k8s.io/v1beta1/certificatesigningrequests/${ESCAPED_USER} 2>/dev/null | jq .status.certificate | tr -d '"' | base64 --decode > $OUT
+  $CURL --cacert "${DIR}/ca.pem" -H "Accept: application/json" ${KUBE_MASTER}/apis/certificates.k8s.io/v1beta1/certificatesigningrequests/${ESCAPED_USER} 2>/dev/null | jq .status.certificate | tr -d '"' | base64 --decode > $OUT
 
   if [ -s "$OUT" ]; then
     echo "Certificate obtained"

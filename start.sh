@@ -3,8 +3,25 @@
 export CURL=${CURL:-"curl --connect-timeout 5 --max-time 10"}
 export KUBE_MASTER=${KUBE_MASTER:-"https://10.27.26.98:443"}
 export DIR=${DIR:-"$HOME/.kube"}
+export CFSSL_VER=${CFSSL_VER:-"R1.2"}
+export DISTRO=${DISTRO-"$(uname -s | tr '[:upper:]' '[:lower:]')"}
+export BIN_DIR=${BIN_DIR:-"/usr/local/bin"}
+export SUDO=${SUDO:-"sudo"}
 
-function command_exists {
+if [ -z "$ARCH" ]; then
+  case $(uname -m) in
+    x86_64)
+        ARCH="amd64" ;;
+    i686)
+        ARCH="386" ;;
+    arm)
+        ARCH="arm" ;;
+    *)
+      echo "Architecture $(uname -m) not supported, override ARCH variable"
+  esac
+fi
+
+command_exists () {
   MSG=$1
   shift 1
   "$@" > /dev/null 2>/dev/null
@@ -14,9 +31,16 @@ function command_exists {
   fi
 }
 
-command_exists "You do not seem to have curl installed" $CURL
-command_exists "You do not seem to have cfssl installed - try 'brew install cfssl' or check https://pkg.cfssl.org" cfssl
-command_exists "You do not seem to have jq installed - try 'brew install jq'" jq
+install_cfssl () {
+  $SUDO $CURL https://pkg.cfssl.org/${CFSSL_VER}/cfssl_${DISTRO}-${ARCH} -o ${BIN_DIR}/cfssl
+  $SUDO $CURL https://pkg.cfssl.org/${CFSSL_VER}/cfssljson_${DISTRO}-${ARCH} -o ${BIN_DIR}/cfssljson
+  $SUDO chmod a+x ${BIN_DIR}/{cfssl,cfssljson}
+}
+
+command_exists "You do not seem to have curl installed - try 'apt-get install curl'" $CURL
+command_exists "You do not seem to have jq installed - try 'brew install jq' or 'apt-get install jq'" jq
+
+cfssl version >/dev/null 2>/dev/null || install_cfssl
 
 KUBE_USER=${KUBE_USER:-"$1"}
 if [ -z "$KUBE_USER" ]; then
@@ -32,24 +56,24 @@ ESCAPED_USER=$(echo $KUBE_USER | tr -cd "[a-z]")
 
 echo "Hello $ESCAPED_USER"
 
-if [ ! -x "/usr/local/bin/kubectl" ]; then
+if [ ! -x "${BIN_DIR}/kubectl" ]; then
   echo "Installing kubectl (you will need to allow admin access)..."
-  sudo curl -o /usr/local/bin/kubectl https://storage.googleapis.com/kubernetes-release/release/$(curl https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/$(uname -s | tr '[:upper:]' '[:lower:]')/amd64/kubectl
-  sudo chmod a+x /usr/local/bin/kubectl
+  $SUDO $CURL -o ${BIN_DIR}/kubectl https://storage.googleapis.com/kubernetes-release/release/$(curl https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/${DISTRO}/${ARCH}/kubectl
+  $SUDO chmod a+x ${BIN_DIR}/kubectl
 fi
 
-if [ ! -d "$DIR" ]; then
+if [ ! -d "${DIR}" ]; then
   echo "Initalizing kube configuration"
 
-  mkdir -p "$DIR"
+  mkdir -p "${DIR}"
 
-  if [ -f "$DIR/config" ]; then
-    cp "$DIR/config" "$DIR/config.$$"
+  if [ -f "${DIR}/config" ]; then
+    cp "${DIR}/config" "${DIR}/config.$$"
   fi
 
-  curl -o "$DIR/ca.pem" https://raw.githubusercontent.com/fiksn/kubestart/master/ca.pem 2>/dev/null
+  $CURL -o "${DIR}/ca.pem" https://raw.githubusercontent.com/fiksn/kubestart/master/ca.pem 2>/dev/null
 
-  cat <<EOF > "$DIR/config"
+  cat <<EOF > "${DIR}/config"
 apiVersion: v1
 clusters:
 - cluster:
@@ -140,7 +164,7 @@ cat <<EOF | cfssl genkey - | cfssljson -bare $ESCAPED_USER
 EOF
 
 echo "Creating certficate request..."
-cat <<EOF | curl -k -X POST --data-binary @/dev/stdin  -H "Content-Type: application/yaml" -H "Accept: application/json" ${KUBE_MASTER}/apis/certificates.k8s.io/v1beta1/certificatesigningrequests 2>/dev/null
+cat <<EOF | $CURL --cacert "${DIR}/ca.pem" -X POST --data-binary @/dev/stdin  -H "Content-Type: application/yaml" -H "Accept: application/json" ${KUBE_MASTER}/apis/certificates.k8s.io/v1beta1/certificatesigningrequests 2>/dev/null
 apiVersion: certificates.k8s.io/v1beta1
 kind: CertificateSigningRequest
 metadata:
@@ -155,9 +179,9 @@ spec:
   - server auth
 EOF
 
-mv -f ${ESCAPED_USER}-key.pem "$DIR/${ESCAPED_USER}.key"
+mv -f ${ESCAPED_USER}-key.pem "${DIR}/${ESCAPED_USER}.key"
 
-curl -o "$DIR/cert.sh" https://raw.githubusercontent.com/fiksn/kubestart/master/cert.sh 2>/dev/null
+$CURL -o "$DIR/cert.sh" https://raw.githubusercontent.com/fiksn/kubestart/master/cert.sh 2>/dev/null
 chmod a+x "$DIR/cert.sh"
 
 echo "Somebody with the privilege now needs to do \"kubectl certificate approve ${ESCAPED_USER}\" and give you the correct role through RBAC"
