@@ -157,7 +157,7 @@ users:
 EOF
 fi
 
-cat <<EOF | cfssl genkey - | cfssljson -bare $ESCAPED_USER || exit 1
+cat <<EOF | cfssl genkey - 2>/dev/null | cfssljson -bare $ESCAPED_USER 2>/dev/null || exit 1
 {
   "CN": "$ESCAPED_USER",
   "key": {
@@ -168,7 +168,7 @@ cat <<EOF | cfssl genkey - | cfssljson -bare $ESCAPED_USER || exit 1
 EOF
 
 echo "Creating certficate request..."
-cat <<EOF | $CURL --max-time ${SHORT_WAIT} --cacert "${DIR}/ca.pem" -X POST --data-binary @/dev/stdin  -H "Content-Type: application/yaml" -H "Accept: application/json" ${KUBE_MASTER}/apis/certificates.k8s.io/v1beta1/certificatesigningrequests 2>/dev/null || exit 1
+RESULT=$(cat <<EOF | $CURL --max-time ${SHORT_WAIT} --cacert "${DIR}/ca.pem" -X POST --data-binary @/dev/stdin  -H "Content-Type: application/yaml" -H "Accept: application/json" ${KUBE_MASTER}/apis/certificates.k8s.io/v1beta1/certificatesigningrequests 2>/dev/null | jq '.status' | tr -d '"'
 apiVersion: certificates.k8s.io/v1beta1
 kind: CertificateSigningRequest
 metadata:
@@ -182,6 +182,12 @@ spec:
   - key encipherment
   - client auth
 EOF
+)
+
+if [ "$RESULT" != "{}" ]; then
+  echo "Server returned failure"
+  exit 1
+fi
 
 mv -f ${ESCAPED_USER}-key.pem "${DIR}/${ESCAPED_USER}.key"
 
