@@ -154,7 +154,6 @@ users:
     client-certificate: ./${ESCAPED_USER}.crt
     client-key: ./${ESCAPED_USER}.key
 EOF
-fi
 
 if [ ! -f "${ESCAPED_USER}.csr" ]; then
   echo "Creating CSR..."

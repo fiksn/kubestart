@@ -43,7 +43,7 @@ while true; do
   OUT="$(mktemp tempcertXXXXXXX)"
   $CURL --cacert "${DIR}/ca.pem" -H "Accept: application/json" ${KUBE_MASTER}/apis/certificates.k8s.io/v1beta1/certificatesigningrequests/${ESCAPED_USER} 2>/dev/null | jq .status.certificate | tr -d '"' | base64 --decode > $OUT
 
-  if [ -s "$OUT" ]; then
+  if find "$OUT" -type f -size +10c 2>/dev/null | grep -q .; then
     echo "Certificate obtained"
     break
   else
