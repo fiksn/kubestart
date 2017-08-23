@@ -1,12 +1,14 @@
 #!/bin/sh
 
-export CURL=${CURL:-"curl --connect-timeout 5 --max-time 10"}
+export CURL=${CURL:-"curl --connect-timeout 5"}
 export KUBE_MASTER=${KUBE_MASTER:-"https://10.27.26.98:443"}
 export DIR=${DIR:-"$HOME/.kube"}
 export CFSSL_VER=${CFSSL_VER:-"R1.2"}
 export DISTRO=${DISTRO-"$(uname -s | tr '[:upper:]' '[:lower:]')"}
 export BIN_DIR=${BIN_DIR:-"/usr/local/bin"}
 export SUDO=${SUDO:-"sudo"}
+export LONG_WAIT=${LONG_WAIT:-"300"}
+export SHORT_WAIT=${SHORT_WAIT:-"10"}
 
 if [ -z "$ARCH" ]; then
   case $(uname -m) in
@@ -32,14 +34,15 @@ command_exists () {
 }
 
 install_cfssl () {
-  $SUDO $CURL https://pkg.cfssl.org/${CFSSL_VER}/cfssl_${DISTRO}-${ARCH} -o ${BIN_DIR}/cfssl
-  $SUDO $CURL https://pkg.cfssl.org/${CFSSL_VER}/cfssljson_${DISTRO}-${ARCH} -o ${BIN_DIR}/cfssljson
+  $SUDO $CURL --max-time ${LONG_WAIT} https://pkg.cfssl.org/${CFSSL_VER}/cfssl_${DISTRO}-${ARCH} -o ${BIN_DIR}/cfssl || exit 1
+  $SUDO $CURL --max-time ${LONG_WAIT} https://pkg.cfssl.org/${CFSSL_VER}/cfssljson_${DISTRO}-${ARCH} -o ${BIN_DIR}/cfssljson || exit 1
   $SUDO chmod a+x ${BIN_DIR}/cfssl
   $SUDO chmod a+x ${BIN_DIR}/cfssljson
 }
 
 command_exists "You do not seem to have curl installed - try 'apt-get install curl'" $CURL
 command_exists "You do not seem to have jq installed - try 'brew install jq' or 'apt-get install jq'" jq
+command_exists "You do not seem to have sudo installed - try 'apt-get install sudo'" $SUDO id
 
 cfssl version >/dev/null 2>/dev/null || install_cfssl
 
@@ -58,8 +61,8 @@ ESCAPED_USER=$(echo $KUBE_USER | tr -cd "[a-z]")
 echo "Hello $ESCAPED_USER"
 
 if [ ! -x "${BIN_DIR}/kubectl" ]; then
-  echo "Installing kubectl (you will need to allow admin access)..."
-  $SUDO $CURL -o ${BIN_DIR}/kubectl https://storage.googleapis.com/kubernetes-release/release/$(curl https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/${DISTRO}/${ARCH}/kubectl
+  echo "Installing kubectl..."
+  $SUDO $CURL --max-time ${LONG_WAIT} -o ${BIN_DIR}/kubectl https://storage.googleapis.com/kubernetes-release/release/$(curl https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/${DISTRO}/${ARCH}/kubectl || exit 1
   $SUDO chmod a+x ${BIN_DIR}/kubectl
 fi
 
@@ -72,7 +75,7 @@ if [ ! -d "${DIR}" ]; then
     cp "${DIR}/config" "${DIR}/config.$$"
   fi
 
-  $CURL -o "${DIR}/ca.pem" https://raw.githubusercontent.com/fiksn/kubestart/master/ca.pem 2>/dev/null
+  $CURL --max-time ${SHORT_WAIT} -o "${DIR}/ca.pem" https://raw.githubusercontent.com/fiksn/kubestart/master/ca.pem 2>/dev/null
 
   cat <<EOF > "${DIR}/config"
 apiVersion: v1
@@ -154,7 +157,7 @@ users:
 EOF
 fi
 
-cat <<EOF | cfssl genkey - | cfssljson -bare $ESCAPED_USER
+cat <<EOF | cfssl genkey - | cfssljson -bare $ESCAPED_USER || exit 1
 {
   "CN": "$ESCAPED_USER",
   "key": {
@@ -165,7 +168,7 @@ cat <<EOF | cfssl genkey - | cfssljson -bare $ESCAPED_USER
 EOF
 
 echo "Creating certficate request..."
-cat <<EOF | $CURL --cacert "${DIR}/ca.pem" -X POST --data-binary @/dev/stdin  -H "Content-Type: application/yaml" -H "Accept: application/json" ${KUBE_MASTER}/apis/certificates.k8s.io/v1beta1/certificatesigningrequests 2>/dev/null
+cat <<EOF | $CURL --max-time ${SHORT_WAIT} --cacert "${DIR}/ca.pem" -X POST --data-binary @/dev/stdin  -H "Content-Type: application/yaml" -H "Accept: application/json" ${KUBE_MASTER}/apis/certificates.k8s.io/v1beta1/certificatesigningrequests 2>/dev/null || exit 1
 apiVersion: certificates.k8s.io/v1beta1
 kind: CertificateSigningRequest
 metadata:
@@ -182,7 +185,7 @@ EOF
 
 mv -f ${ESCAPED_USER}-key.pem "${DIR}/${ESCAPED_USER}.key"
 
-$CURL -o "$DIR/cert.sh" https://raw.githubusercontent.com/fiksn/kubestart/master/cert.sh 2>/dev/null
+$CURL -o "$DIR/cert.sh" https://raw.githubusercontent.com/fiksn/kubestart/master/cert.sh 2>/dev/null || exit 1
 chmod a+x "$DIR/cert.sh"
 
 echo "Somebody with the privilege now needs to do \"kubectl certificate approve ${ESCAPED_USER}\" and give you the correct role through RBAC"
