@@ -180,7 +180,7 @@ spec:
   usages:
   - digital signature
   - key encipherment
-  - server auth
+  - client auth
 EOF
 
 mv -f ${ESCAPED_USER}-key.pem "${DIR}/${ESCAPED_USER}.key"
