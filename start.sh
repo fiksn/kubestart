@@ -8,7 +8,7 @@ export DISTRO=${DISTRO-"$(uname -s | tr '[:upper:]' '[:lower:]')"}
 export BIN_DIR=${BIN_DIR:-"/usr/local/bin"}
 export SUDO=${SUDO:-"sudo"}
 export LONG_WAIT=${LONG_WAIT:-"300"}
-export SHORT_WAIT=${SHORT_WAIT:-"10"}
+export SHORT_WAIT=${SHORT_WAIT:-"60"}
 
 if [ -z "$ARCH" ]; then
   case $(uname -m) in
@@ -58,7 +58,7 @@ fi
 
 ESCAPED_USER=$(echo $KUBE_USER | tr -cd "[a-z]")
 
-echo "Hello $ESCAPED_USER"
+echo "Hello ${ESCAPED_USER}"
 
 if [ ! -x "${BIN_DIR}/kubectl" ]; then
   echo "Installing kubectl..."
@@ -66,18 +66,17 @@ if [ ! -x "${BIN_DIR}/kubectl" ]; then
   $SUDO chmod a+x ${BIN_DIR}/kubectl
 fi
 
-if [ ! -d "${DIR}" ]; then
-  echo "Initalizing kube configuration"
+echo "Initalizing kube configuration..."
 
-  mkdir -p "${DIR}"
+mkdir -p "${DIR}"
 
-  if [ -f "${DIR}/config" ]; then
-    cp "${DIR}/config" "${DIR}/config.$$"
-  fi
+if [ -f "${DIR}/config" ]; then
+  cp "${DIR}/config" "${DIR}/config.$$"
+fi
 
-  $CURL --max-time ${SHORT_WAIT} -o "${DIR}/ca.pem" https://raw.githubusercontent.com/fiksn/kubestart/master/ca.pem 2>/dev/null
+$CURL --max-time ${SHORT_WAIT} -o "${DIR}/ca.pem" https://raw.githubusercontent.com/fiksn/kubestart/master/ca.pem 2>/dev/null
 
-  cat <<EOF > "${DIR}/config"
+cat <<EOF > "${DIR}/config"
 apiVersion: v1
 clusters:
 - cluster:
@@ -157,7 +156,9 @@ users:
 EOF
 fi
 
-cat <<EOF | cfssl genkey - 2>/dev/null | cfssljson -bare $ESCAPED_USER 2>/dev/null || exit 1
+if [ ! -f "${ESCAPED_USER}.csr" ]; then
+  echo "Creating CSR..."
+  cat <<EOF | cfssl genkey - 2>/dev/null | cfssljson -bare $ESCAPED_USER 2>/dev/null || exit 1
 {
   "CN": "$ESCAPED_USER",
   "key": {
@@ -166,17 +167,18 @@ cat <<EOF | cfssl genkey - 2>/dev/null | cfssljson -bare $ESCAPED_USER 2>/dev/nu
   }
 }
 EOF
+fi
 
 echo "Creating certficate request..."
 RESULT=$(cat <<EOF | $CURL --max-time ${SHORT_WAIT} --cacert "${DIR}/ca.pem" -X POST --data-binary @/dev/stdin  -H "Content-Type: application/yaml" -H "Accept: application/json" ${KUBE_MASTER}/apis/certificates.k8s.io/v1beta1/certificatesigningrequests 2>/dev/null | jq '.status' | tr -d '"'
 apiVersion: certificates.k8s.io/v1beta1
 kind: CertificateSigningRequest
 metadata:
-  name: $ESCAPED_USER
+  name: ${ESCAPED_USER}
 spec:
   groups:
   - system:authenticated
-  request: $(cat $ESCAPED_USER.csr | base64 | tr -d '\n')
+  request: $(cat ${ESCAPED_USER}.csr | base64 | tr -d '\n')
   usages:
   - digital signature
   - key encipherment
@@ -189,10 +191,11 @@ if [ "$RESULT" != "{}" ]; then
   exit 1
 fi
 
-mv -f ${ESCAPED_USER}-key.pem "${DIR}/${ESCAPED_USER}.key"
+mv -f "${ESCAPED_USER}-key.pem" "${DIR}/${ESCAPED_USER}.key"
+rm -f "${ESCAPED_USER}.csr"
 
 $CURL -o "$DIR/cert.sh" https://raw.githubusercontent.com/fiksn/kubestart/master/cert.sh 2>/dev/null || exit 1
 chmod a+x "$DIR/cert.sh"
 
 echo "Somebody with the privilege now needs to do \"kubectl certificate approve ${ESCAPED_USER}\" and give you the correct role through RBAC"
-echo "Then you need to run $DIR/cert.sh to obtain the signed certificate"
+echo "Afterwards you need to run ${DIR}/cert.sh to obtain the signed certificate"

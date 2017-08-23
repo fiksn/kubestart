@@ -1,6 +1,6 @@
 #!/bin/sh
 
-export CURL=${CURL:-"curl --connect-timeout 5 --max-time 10"}
+export CURL=${CURL:-"curl --connect-timeout 5 --max-time 30"}
 export KUBE_MASTER=${KUBE_MASTER:-"https://10.27.26.98:443"}
 export DIR=${DIR:-"$HOME/.kube"}
 
