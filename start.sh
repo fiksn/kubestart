@@ -34,49 +34,75 @@ command_exists () {
 }
 
 install_cfssl () {
+  echo "Installing cfssl..."
   $SUDO $CURL --max-time ${LONG_WAIT} https://pkg.cfssl.org/${CFSSL_VER}/cfssl_${DISTRO}-${ARCH} -o ${BIN_DIR}/cfssl || exit 1
+  echo "Installing cfssljson..."
   $SUDO $CURL --max-time ${LONG_WAIT} https://pkg.cfssl.org/${CFSSL_VER}/cfssljson_${DISTRO}-${ARCH} -o ${BIN_DIR}/cfssljson || exit 1
   $SUDO chmod a+x ${BIN_DIR}/cfssl
   $SUDO chmod a+x ${BIN_DIR}/cfssljson
 }
 
-command_exists "You do not seem to have curl installed - try 'apt-get install curl'" $CURL
-command_exists "You do not seem to have jq installed - try 'brew install jq' or 'apt-get install jq'" jq
-command_exists "You do not seem to have sudo installed - try 'apt-get install sudo'" $SUDO id
+install_kubectl () {
+    echo "Installing kubectl..."
+    $SUDO $CURL --max-time ${LONG_WAIT} -o ${BIN_DIR}/kubectl https://storage.googleapis.com/kubernetes-release/release/$(curl https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/${DISTRO}/${ARCH}/kubectl || exit 1
+    $SUDO chmod a+x ${BIN_DIR}/kubectl
+}
 
-cfssl version >/dev/null 2>/dev/null || install_cfssl
+install_ca () {
+  $CURL --max-time ${SHORT_WAIT} -o "${DIR}/ca.pem" https://raw.githubusercontent.com/fiksn/kubestart/master/ca.pem 2>/dev/null
+}
 
-KUBE_USER=${KUBE_USER:-"$1"}
-if [ -z "$KUBE_USER" ]; then
-  read -r -p "What is your username? (example: a.user)> " KUBE_USER
-fi
+verify_commands () {
+  command_exists "You do not seem to have curl installed - try 'apt-get install curl'" $CURL
+  command_exists "You do not seem to have jq installed - try 'brew install jq' or 'apt-get install jq'" jq
+  command_exists "You do not seem to have sudo installed - try 'apt-get install sudo'" $SUDO id
 
-if [ -z "$KUBE_USER" ]; then
-  echo "Invalid user"
-  exit 1
-fi
+  cfssl version >/dev/null 2>/dev/null || install_cfssl
+}
 
-ESCAPED_USER=$(echo $KUBE_USER | tr -cd "[a-z]")
+create_csr () {
+  if [ ! -f "${ESCAPED_USER}.csr" ]; then
+    echo "Creating CSR..."
+    cat <<EOF | cfssl genkey - 2>/dev/null | cfssljson -bare $ESCAPED_USER 2>/dev/null || exit 1
+{
+  "CN": "$ESCAPED_USER",
+  "key": {
+    "algo": "ecdsa",
+    "size": 256
+  }
+}
+EOF
+  fi
 
-echo "Hello ${ESCAPED_USER}"
+  echo "Creating certficate request..."
+  RESULT=$(cat <<EOF | $CURL --max-time ${SHORT_WAIT} --cacert "${DIR}/ca.pem" -X POST --data-binary @/dev/stdin  -H "Content-Type: application/yaml" -H "Accept: application/json" ${KUBE_MASTER}/apis/certificates.k8s.io/v1beta1/certificatesigningrequests 2>/dev/null | jq '.status' | tr -d '"'
+apiVersion: certificates.k8s.io/v1beta1
+kind: CertificateSigningRequest
+metadata:
+  name: ${ESCAPED_USER}
+spec:
+  groups:
+  - system:authenticated
+  request: $(cat ${ESCAPED_USER}.csr | base64 | tr -d '\n')
+  usages:
+  - digital signature
+  - key encipherment
+  - client auth
+EOF
+  )
 
-if [ ! -x "${BIN_DIR}/kubectl" ]; then
-  echo "Installing kubectl..."
-  $SUDO $CURL --max-time ${LONG_WAIT} -o ${BIN_DIR}/kubectl https://storage.googleapis.com/kubernetes-release/release/$(curl https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/${DISTRO}/${ARCH}/kubectl || exit 1
-  $SUDO chmod a+x ${BIN_DIR}/kubectl
-fi
+  if [ "$RESULT" != "{}" ]; then
+    echo "Server returned failure"
+    exit 1
+  fi
 
-echo "Initalizing kube configuration..."
+  mv -f "${ESCAPED_USER}-key.pem" "${DIR}/${ESCAPED_USER}.key"
+  rm -f "${ESCAPED_USER}.csr"
+}
 
-mkdir -p "${DIR}"
-
-if [ -f "${DIR}/config" ]; then
-  cp "${DIR}/config" "${DIR}/config.$$"
-fi
-
-$CURL --max-time ${SHORT_WAIT} -o "${DIR}/ca.pem" https://raw.githubusercontent.com/fiksn/kubestart/master/ca.pem 2>/dev/null
-
-cat <<EOF > "${DIR}/config"
+create_conf () {
+  echo "Initalizing kube configuration..."
+  cat <<EOF > "${DIR}/config"
 apiVersion: v1
 clusters:
 - cluster:
@@ -154,44 +180,36 @@ users:
     client-certificate: ./${ESCAPED_USER}.crt
     client-key: ./${ESCAPED_USER}.key
 EOF
-
-if [ ! -f "${ESCAPED_USER}.csr" ]; then
-  echo "Creating CSR..."
-  cat <<EOF | cfssl genkey - 2>/dev/null | cfssljson -bare $ESCAPED_USER 2>/dev/null || exit 1
-{
-  "CN": "$ESCAPED_USER",
-  "key": {
-    "algo": "ecdsa",
-    "size": 256
-  }
 }
-EOF
+
+# If I was sourced
+return 2>/dev/null
+
+KUBE_USER=${KUBE_USER:-"$1"}
+if [ -z "$KUBE_USER" ]; then
+  read -r -p "What is your username? (example: a.user)> " KUBE_USER
 fi
 
-echo "Creating certficate request..."
-RESULT=$(cat <<EOF | $CURL --max-time ${SHORT_WAIT} --cacert "${DIR}/ca.pem" -X POST --data-binary @/dev/stdin  -H "Content-Type: application/yaml" -H "Accept: application/json" ${KUBE_MASTER}/apis/certificates.k8s.io/v1beta1/certificatesigningrequests 2>/dev/null | jq '.status' | tr -d '"'
-apiVersion: certificates.k8s.io/v1beta1
-kind: CertificateSigningRequest
-metadata:
-  name: ${ESCAPED_USER}
-spec:
-  groups:
-  - system:authenticated
-  request: $(cat ${ESCAPED_USER}.csr | base64 | tr -d '\n')
-  usages:
-  - digital signature
-  - key encipherment
-  - client auth
-EOF
-)
-
-if [ "$RESULT" != "{}" ]; then
-  echo "Server returned failure"
+if [ -z "$KUBE_USER" ]; then
+  echo "Invalid user"
   exit 1
 fi
 
-mv -f "${ESCAPED_USER}-key.pem" "${DIR}/${ESCAPED_USER}.key"
-rm -f "${ESCAPED_USER}.csr"
+verify_commands
+
+ESCAPED_USER=$(echo $KUBE_USER | tr -cd "[a-z]")
+
+echo "Hello ${ESCAPED_USER}"
+
+if [ ! -x "${BIN_DIR}/kubectl" ]; then
+  install_kubectl
+fi
+
+mkdir -p "${DIR}"
+
+install_ca
+create_csr
+create_conf
 
 $CURL -o "$DIR/cert.sh" https://raw.githubusercontent.com/fiksn/kubestart/master/cert.sh 2>/dev/null || exit 1
 chmod a+x "$DIR/cert.sh"

@@ -5,11 +5,20 @@ curl https://raw.githubusercontent.com/fiksn/kubestart/master/start.sh | sh -s a
 ```
 where *a.user* is your username.
 
+In case you want to run it through [Docker](https://www.docker.com/) you can do:
+
+```
+docker run -v ~/.kube:~/.kube fiksn/kubestart
+```
+
+You can reuse .kube data then also with a Windows version of kubectl or just run it in a container all the time.
+
 ## What does this thing do?
 
-This a quite lame (but quick) way to initialize your work environment to use our internal Kubernetes cluster (like request a certificate and download latest kubectl). Until we hook up authentication to AD we need this. 
+This a quite lame (but quick) way to initialize your work environment to use our internal Kubernetes cluster (request a certificate and download latest kubectl). Until we hook up authentication to AD we need this.
+And even afterwards somebody might prefer to have kubectl installed in a container.
 
-For external users there is probably no real need to read this except curiosity. (Hope you learned something new though.)
+For external users there is probably no real need to read this except curiosity. (Hope you learned something new though, I certainly did.)
 
 **This is not a tutorial for bootstrapping a Kubernetes cluster - use the great [kubeadm](https://kubernetes.io/docs/setup/independent/create-cluster-kubeadm/) tool for that purpose**
 
