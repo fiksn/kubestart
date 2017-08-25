@@ -8,7 +8,7 @@ where *a.user* is your username.
 In case you want to run it through [Docker](https://www.docker.com/) you can do:
 
 ```
-docker run -v ~/.kube:~/.kube fiksn/kubestart
+docker run -it -v $HOME/.kube:/root/.kube fiksn/kubestart
 ```
 
 You can reuse .kube data then also with a Windows version of kubectl or just run it in a container all the time.
