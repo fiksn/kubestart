@@ -1,7 +1,7 @@
 # Kubernetes quick start
 
 ```
-curl https://raw.githubusercontent.com/fiksn/kubestart/master/start.sh | sh -s a.user
+curl https://raw.githubusercontent.com/fiksn/kubestart/master/start.sh | bash -s a.user
 ```
 where *a.user* is your username.
 
