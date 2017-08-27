@@ -1,4 +1,4 @@
-# Kubernetes quick start
+# [Kubernetes](https://kubernetes.io) Quick Start
 
 ```
 curl https://raw.githubusercontent.com/fiksn/kubestart/master/start.sh | bash -s a.user
@@ -11,20 +11,22 @@ In case you want to run it through [Docker](https://www.docker.com/) you can do:
 docker run -it -v $HOME/.kube:/root/.kube fiksn/kubestart
 ```
 
-You can reuse .kube data then also with a Windows version of kubectl or just run it in a container all the time.
+It is possible to reuse .kube data then also with a Windows version of kubectl or just run it in a container all the time.
 
 ## What does this thing do?
 
-This a quite lame (but quick) way to initialize your work environment to use our internal Kubernetes cluster (request a certificate and download latest kubectl). Until we hook up authentication to AD we need this.
-And even afterwards somebody might prefer to have kubectl installed in a container.
+This a quite lame (but quick) way to initialize your work environment. This way you can use use our internal Kubernetes cluster. It will download latest kubectl, set-up all configuration and
+finally also create a cryptographic key and certificate signing request (CSR) and submit it through the Kubernetes API for approval.
 
-For external users there is probably no real need to read this except curiosity. (Hope you learned something new though, I certainly did.)
+The last step is necessary only until we set-up authentication through Active Directory. 
+
+For external users there is probably no real need to read this except curiosity. Except if you want a container with kubectl inside. (Hope you learned something new though, I certainly did while writing this. And after all this is the most important thing.)
 
 **This is not a tutorial for bootstrapping a Kubernetes cluster - use the great [kubeadm](https://kubernetes.io/docs/setup/independent/create-cluster-kubeadm/) tool for that purpose**
 
 ## Compatibility
 
-I am testing this with MacOS (Sierra) but it should work also on GNU/Linux.
+I am testing this with MacOS (Sierra) but it should work also on GNU/Linux. At least with Debian Stretch (which is also the base for the Docker image) everything works.
 There is a bunch of external utilities required: 
 * [jq](https://stedolan.github.io/jq/)
 * [cfssl](https://www.cfssl.org/)
@@ -58,3 +60,7 @@ kubectl certificate approve name
 ```
 
 only afterwards the controller will sign. Besides the admin should of course also give proper permissions / create role bindings ([example](./binding.yaml)).
+
+## Backup
+
+Make sure to backup you private key and certificate from .kube (or even better copy whole $HOME/.kube directory).
