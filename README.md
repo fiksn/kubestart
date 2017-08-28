@@ -1,4 +1,4 @@
-# [Kubernetes](https://kubernetes.io) Quick Start
+# Kubernetes Quick Start
 
 ```
 curl https://raw.githubusercontent.com/fiksn/kubestart/master/start.sh | bash -s a.user
@@ -11,7 +11,8 @@ In case you want to run it through [Docker](https://www.docker.com/) you can do:
 docker run -it -v $HOME/.kube:/root/.kube fiksn/kubestart
 ```
 
-It is possible to reuse .kube data then also with a Windows version of kubectl or just run it in a container all the time.
+It is possible to reuse .kube data then also with a Windows version of kubectl or just run it in a container all the time. In that case it might make sense
+to also mount /external in the container (so you can use external scripts from different repos).
 
 ## What does this thing do?
 
