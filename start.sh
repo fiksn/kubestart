@@ -1,4 +1,5 @@
 #!/bin/bash
+set -eu
 
 export CURL=${CURL:-"curl --connect-timeout 5"}
 export KUBE_MASTER=${KUBE_MASTER:-"https://10.27.26.98:443"}
@@ -10,7 +11,7 @@ export SUDO=${SUDO:-"sudo"}
 export LONG_WAIT=${LONG_WAIT:-"300"}
 export SHORT_WAIT=${SHORT_WAIT:-"60"}
 
-if [ -z "$ARCH" ]; then
+if [ -z ${ARCH+x} ]; then
   case $(uname -m) in
     x86_64)
         ARCH="amd64" ;;
@@ -24,6 +25,7 @@ if [ -z "$ARCH" ]; then
 fi
 
 command_exists () {
+  set +e
   MSG=$1
   shift 1
   "$@" > /dev/null 2>/dev/null
@@ -31,6 +33,7 @@ command_exists () {
     echo "$MSG"
     exit 1
   fi
+  set -e
 }
 
 install_cfssl () {
@@ -183,14 +186,19 @@ EOF
 }
 
 # If I was sourced
+set +e
 return 2>/dev/null
+set -e
 
-KUBE_USER=${KUBE_USER:-"$1"}
-if [ -z "$KUBE_USER" ]; then
+if [ "$#" -gt 0 ]; then
+  KUBE_USER=${KUBE_USER:-"$1"}
+fi
+
+if [ -z ${KUBE_USER+x} ]; then
   read -r -p "What is your username? (example: a.user)> " KUBE_USER
 fi
 
-if [ -z "$KUBE_USER" ]; then
+if [ -z ${KUBE_USER+x} ]; then
   echo "Invalid user"
   exit 1
 fi

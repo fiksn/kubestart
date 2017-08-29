@@ -1,10 +1,12 @@
 #!/bin/bash
+set -eu
 
 export CURL=${CURL:-"curl --connect-timeout 5 --max-time 30"}
 export KUBE_MASTER=${KUBE_MASTER:-"https://10.27.26.98:443"}
 export DIR=${DIR:-"$HOME/.kube"}
 
 command_exists () {
+  set +e
   MSG=$1
   shift 1
   "$@" > /dev/null 2>/dev/null
@@ -12,6 +14,7 @@ command_exists () {
     echo "$MSG"
     exit 1
   fi
+  set -e
 }
 
 command_exists "You do not seem to have curl installed" $CURL
