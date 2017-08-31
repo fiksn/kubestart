@@ -165,6 +165,11 @@ contexts:
     user: user
   name: rtop-stg
 - context:
+    cluster: prod
+    namespace: rtop-prod
+    user: user
+  name: rtop-prod
+- context:
     cluster: stg
     user: user
   name: stg
