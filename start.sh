@@ -105,6 +105,11 @@ EOF
 
 create_conf () {
   echo "Initalizing kube configuration..."
+
+  if [ -f "${DIR}/config" ]; then
+    mv -f "${DIR}/config" "${DIR}/config.backup.$$"
+  fi
+
   cat <<EOF > "${DIR}/config"
 apiVersion: v1
 clusters:
