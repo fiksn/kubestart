@@ -128,6 +128,11 @@ clusters:
 contexts:
 - context:
     cluster: stg
+    namespace: market-mapping
+    user: user
+  name: market-mapping
+- context:
+    cluster: stg
     namespace: ci
     user: user
   name: ci
