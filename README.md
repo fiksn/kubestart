@@ -11,12 +11,12 @@ In case you want to run it through [Docker](https://www.docker.com/) you can do:
 docker run -it -v $HOME/.kube:/root/.kube fiksn/kubestart
 ```
 
-It is possible to reuse .kube data then also with a Windows version of kubectl or just run it in a container all the time. In that case it might make sense
-to also mount /external in the container (so you can use external scripts from different repos).
+It is possible to reuse .kube data with a Windows version of kubectl or just run it in a container. In that case it might make sense
+to mount /external in the container (so you can use external scripts from different repos).
 
 ## What does this thing do?
 
-This a quite lame (but quick) way to initialize your work environment. This way you can use use our internal Kubernetes cluster. It will download latest kubectl, set-up all configuration and
+This a quite lame (but quick) way to initialize your work environment. This way you can use our internal Kubernetes cluster. It will download latest kubectl, set-up all configuration and
 finally also create a cryptographic key and certificate signing request (CSR) and submit it through the Kubernetes API for approval.
 
 The last step is necessary only until we set-up authentication through Active Directory. 
@@ -27,7 +27,7 @@ For external users there is probably no real need to read this except curiosity.
 
 ## Compatibility
 
-I am testing this with MacOS (Sierra) but it should work also on GNU/Linux. At least with Debian Stretch (which is also the base for the Docker image) everything works.
+I am testing this with MacOS (Sierra) but it should also work on GNU/Linux. I works with Debian Stretch (which is the base Docker image).
 There is a bunch of external utilities required: 
 * [jq](https://stedolan.github.io/jq/)
 * [cfssl](https://www.cfssl.org/)
@@ -52,7 +52,7 @@ This scripts basically just emulate [Manage TLS Certificates in a Cluster](https
 --cluster-signing-cert-file="/etc/kubernetes/ca/ca.pem" --cluster-signing-key-file="/etc/kubernetes/ca/ca.key" 
 ```
 
-flags to **kube-controller-manager** to automatically sign CSRs. The file locations (from above) are the defaults and as soon as the files exist csrapproving controller will do its job. As a word of wisdom, you might be careful about your CA keys as they could get easily compromised (so don't put the root CA of your PKI there).
+flags to **kube-controller-manager** to automatically sign CSRs. The file locations (from above) are the defaults and as soon as the files exist csrapproving controller will do its job. As a word of wisdom, you might want to be careful about your CA keys as they could get easily compromised (so don't put the root CA of your PKI there).
 
 Note that for each CSR an admin still has to manually approve it like:
 
