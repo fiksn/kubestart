@@ -27,7 +27,7 @@ For external users there is probably no real need to read this except curiosity.
 
 ## Compatibility
 
-I am testing this with MacOS (Sierra) but it should also work on GNU/Linux. I works with Debian Stretch (which is the base Docker image).
+I am testing this with MacOS (High Sierra) but it should also work on GNU/Linux. It works with Debian Stretch (which is the base Docker image).
 There is a bunch of external utilities required: 
 * [jq](https://stedolan.github.io/jq/)
 * [cfssl](https://www.cfssl.org/)
