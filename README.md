@@ -34,6 +34,25 @@ There is a bunch of external utilities required:
 * [curl](https://curl.haxx.se/) (present by default on MacOS)
 * [base64](https://linux.die.net/man/1/base64) (probably already present in whatever distro you use through coreutils)
 
+## CFSSL issue
+
+There is an issue with Go and CFSSL on MacOS Sierra+ (https://github.com/cloudflare/cfssl/issues/813).
+
+You will notice that the output contains just:
+
+```
+Creating CSR...
+```
+
+and nothing more (since cfssl crashes)
+
+In that case you need to manually install a different cfssl version to /usr/local/bin. In case you have HomeBrew installed you can simply do:
+
+```
+brew reinstall cfssl
+brew link --overwrite cfssl
+```
+
 ## Motivation
 
 I'd put the stuff in our internal GitLab repository but somebody decided that we should not be able to mark repos as "Public".
