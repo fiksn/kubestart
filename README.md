@@ -23,7 +23,7 @@ The last step is necessary only until we set-up authentication through Active Di
 
 For external users there is probably no real need to read this except curiosity. Except if you want a container with kubectl inside. (Hope you learned something new though, I certainly did while writing this. And after all this is the most important thing.)
 
-**This is not a tutorial for bootstrapping a Kubernetes cluster - use the great [kubeadm](https://kubernetes.io/docs/setup/independent/create-cluster-kubeadm/) tool for that purpose**
+**This is not a tutorial for bootstrapping a Kubernetes cluster - use the great [kubeadm](https://kubernetes.io/docs/setup/independent/create-cluster-kubeadm/) tool for that purpose or [kops](https://github.com/kubernetes/kops) if you are on AWS or GCE**
 
 ## Compatibility
 
