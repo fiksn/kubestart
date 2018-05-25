@@ -115,7 +115,7 @@ apiVersion: v1
 clusters:
 - cluster:
     certificate-authority: ./ca.pem
-    server: https://10.27.26.98:443
+    server: https://mts-dev-k8s.sportradar.ag:6443
   name: dev
 - cluster:
     certificate-authority: ./ca.pem
