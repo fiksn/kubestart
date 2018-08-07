@@ -1,8 +1,8 @@
 #!/bin/bash
 set -eu
 
-export CURL=${CURL:-"curl --connect-timeout 5"}
-export KUBE_MASTER=${KUBE_MASTER:-"https://10.200.24.254:443"}
+export CURL=${CURL:-"curl --connect-timeout 5 -k"}
+export KUBE_MASTER=${KUBE_MASTER:-"https://mts-prod-k8s.sportradar.ag:6443"}
 export DIR=${DIR:-"$HOME/.kube"}
 export CFSSL_VER=${CFSSL_VER:-"R1.2"}
 export DISTRO=${DISTRO-"$(uname -s | tr '[:upper:]' '[:lower:]')"}
