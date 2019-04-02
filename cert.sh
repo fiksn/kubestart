@@ -34,7 +34,7 @@ fi
 DEST="${DIR}/${ESCAPED_USER}.crt"
 
 if [ -s "$DEST" ]; then
-  if [ -z "$FORCE" ]; then
+  if [ -z "${FORCE:-}" ]; then
     echo "File $DEST already exists, you might want to set FORCE=true"
     exit 1
   fi
