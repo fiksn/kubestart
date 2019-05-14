@@ -28,7 +28,7 @@ command_exists () {
   set +e
   MSG=$1
   shift 1
-  "$@" > /dev/null 2>/dev/null
+  eval "$@" > /dev/null 2>/dev/null
   if [ $? -eq 127 ]; then
     echo "$MSG"
     exit 1
@@ -57,9 +57,8 @@ install_ca () {
 
 verify_commands () {
   command_exists "You do not seem to have curl installed - try 'apt-get install curl'" $CURL
-  command_exists "You do not seem to have jq installed - try 'brew install jq' or 'apt-get install jq'" jq
+  command_exists "You do not seem to have jq installed - try 'brew install jq' or 'apt-get install jq'" "echo a | jq ."
   command_exists "You do not seem to have sudo installed - try 'apt-get install sudo'" $SUDO id
-
   cfssl version >/dev/null 2>/dev/null || install_cfssl
 }
 
