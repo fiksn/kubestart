@@ -117,12 +117,14 @@ clusters:
     server: https://mts-dev-k8s.sportradar.ag:6443
   name: dev
 - cluster:
-    certificate-authority: ./ca.pem
-    server: https://10.200.24.254:443
+    #certificate-authority: ./ca.pem
+    insecure-skip-tls-verify: true
+    server: https://mts-prod-k8s.sportradar.ag:6443
   name: prod
 - cluster:
-    certificate-authority: ./ca.pem
-    server: https://10.200.25.254:443
+    #certificate-authority: ./ca.pem
+    insecure-skip-tls-verify: true
+    server: https://mts-stg-k8s.sportradar.ag:6443
   name: stg
 contexts:
 - context:
@@ -144,11 +146,6 @@ contexts:
     namespace: system-test
     user: user
   name: devtst
-- context:
-    cluster: dev
-    namespace: fiction
-    user: user
-  name: fiction
 - context:
     cluster: prod
     user: user
