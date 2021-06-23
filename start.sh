@@ -2,7 +2,7 @@
 set -eu
 
 export CURL=${CURL:-"curl --connect-timeout 5 -k"}
-export KUBE_MASTER=${KUBE_MASTER:-"https://mts-prod-k8s.sportradar.ag:6443"}
+export KUBE_MASTER=${KUBE_MASTER:-"https://mts-stg-k8s.sportradar.ag:6443"}
 export DIR=${DIR:-"$HOME/.kube"}
 export CFSSL_VER=${CFSSL_VER:-"R1.2"}
 export DISTRO=${DISTRO-"$(uname -s | tr '[:upper:]' '[:lower:]')"}
@@ -77,7 +77,7 @@ EOF
   fi
 
   echo "Creating certficate request..."
-  RESULT=$(cat <<EOF | $CURL --max-time ${SHORT_WAIT} --cacert "${DIR}/ca.pem" -X POST --data-binary @/dev/stdin  -H "Content-Type: application/yaml" -H "Accept: application/json" ${KUBE_MASTER}/apis/certificates.k8s.io/v1beta1/certificatesigningrequests 2>/dev/null | jq '.status' | tr -d '"'
+  RESULT=$(cat <<EOF | $CURL --max-time ${SHORT_WAIT} -X POST --data-binary @/dev/stdin  -H "Content-Type: application/yaml" -H "Accept: application/json" ${KUBE_MASTER}/apis/certificates.k8s.io/v1beta1/certificatesigningrequests 2>/dev/null | jq '.status' | tr -d '"'
 apiVersion: certificates.k8s.io/v1beta1
 kind: CertificateSigningRequest
 metadata:
